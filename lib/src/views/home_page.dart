@@ -1,3 +1,4 @@
+import 'package:dontpad/src/views/note_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,6 +11,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _MainPageState extends State<HomePage> {
+  final TextEditingController _controller = TextEditingController();
+
+  void _navigateToNotePage() {
+    if (_controller.text.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NotePage(roomName: _controller.text),
+        ),
+      );
+    } else {
+      // Show an error if the input is empty
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Please enter a room name")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -63,6 +82,7 @@ class _MainPageState extends State<HomePage> {
                           children: [
                             Expanded(
                               child: TextField(
+                                controller: _controller,
                                 decoration: InputDecoration(
                                   hintText: "your-secret-page",
                                   border: UnderlineInputBorder(),
@@ -87,9 +107,7 @@ class _MainPageState extends State<HomePage> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {
-                            // TODO: Navigate to the next page
-                          },
+                          onPressed: _navigateToNotePage,
                           child: Text("Go!"),
                         ),
                       ),
