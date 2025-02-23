@@ -1,7 +1,5 @@
-import 'dart:convert';
-
+import 'package:dontpad/src/services/dontpad_api.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class NotePage extends StatefulWidget {
   const NotePage({required this.roomName, super.key});
@@ -16,7 +14,6 @@ class NotePage extends StatefulWidget {
 class _NotePageState extends State<NotePage> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;
-  // String? _errorMessage;
 
   @override
   void initState() {
@@ -26,37 +23,10 @@ class _NotePageState extends State<NotePage> {
 
   // Fetch note from dontpad API
   Future<void> _fetchNote() async {
-    final url =
-        "https://api.dontpad.com/${widget.roomName}.body.json?lastModified=0"; // dont want to harcode the token
-    print("Fetching from: $url");
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      print("Response body: ${response.body}");
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _controller.text = data['body'] ?? '';
-          _isLoading = false;
-        });
-      } else {
-        print("Error: Received unexpected response.");
-        setState(() {
-          // _errorMessage =
-          //     "Error: Received unexpected response (Status Code: ${response.statusCode})";
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Error fetching note: $e");
-      setState(() {
-        // _errorMessage = "Error fetching note: $e";
-        _isLoading = false;
-      });
-    }
+    var noteContent = await DontpadApi.fetchNote(widget.roomName);
 
     setState(() {
+      _controller.text = noteContent ?? "Failed to load note.";
       _isLoading = false;
     });
   }
