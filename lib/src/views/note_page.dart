@@ -17,8 +17,8 @@ class _NotePageState extends State<NotePage> {
 
   @override
   void initState() {
-    _fetchNote();
     super.initState();
+    _fetchNote(); // we can fetch it later since we have out loading waiting
   }
 
   // Fetch note from dontpad API
@@ -31,6 +31,14 @@ class _NotePageState extends State<NotePage> {
     });
   }
 
+  void _refreshPage() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    await _fetchNote();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,6 +49,9 @@ class _NotePageState extends State<NotePage> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(icon: Icon(Icons.refresh), onPressed: _refreshPage),
+        ],
       ),
       body:
           _isLoading
