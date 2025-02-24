@@ -1,3 +1,4 @@
+import 'package:dontpad/src/dto/note_dto.dart';
 import 'package:dontpad/src/services/dontpad_api.dart';
 import 'package:flutter/material.dart';
 
@@ -14,29 +15,74 @@ class NotePage extends StatefulWidget {
 class _NotePageState extends State<NotePage> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;
+  NoteDto? _note;
 
   @override
   void initState() {
     super.initState();
-    _fetchNote(); // we can fetch it later since we have out loading waiting
+    _loadNote(); // we can fetch it later since we have out loading waiting
   }
 
-  // Fetch note from dontpad API
-  Future<void> _fetchNote() async {
-    var noteContent = await DontpadApi.fetchNote(widget.roomName);
+  // Load note from dontpad API
+  Future<void> _loadNote() async {
+    var note = await DontpadApi.getNote(widget.roomName);
 
     setState(() {
-      _controller.text = noteContent ?? "Failed to load note.";
+      if (note != null) {
+        _note = note;
+        _controller.text = note.body;
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Failed to load note.")));
+        }
+      }
       _isLoading = false;
     });
   }
 
-  void _refreshPage() async {
-    setState(() {
-      _isLoading = true;
-    });
+  // Save out note though POST
+  Future<void> _saveNote() async {
+    // we need to load in order to check lastModified
+    // considering that my first fetch to display the
+    // page might not be the same when the new note
+    // is being displayed
+    _loadNote();
 
-    await _fetchNote();
+    setState(() => _isLoading = true);
+
+    final success = await DontpadApi.postNote(
+      widget.roomName,
+      _controller.text,
+      _note!.lastModified,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Note saved successfully!' : 'Failed to save note.',
+          ),
+        ),
+      );
+    }
+
+    // force to load our body values to update the
+    // controller once again in case the note failed due to
+    // someone making changes on our adress body while we
+    // tried to apply ours
+    if (success) {
+      setState(() => _isLoading = true);
+      _loadNote();
+    }
+  }
+
+  void _refreshPage() async {
+    setState(() => _isLoading = true);
+    await _loadNote();
   }
 
   @override
@@ -51,6 +97,7 @@ class _NotePageState extends State<NotePage> {
         centerTitle: true,
         actions: [
           IconButton(icon: Icon(Icons.refresh), onPressed: _refreshPage),
+          IconButton(icon: Icon(Icons.save), onPressed: _saveNote),
         ],
       ),
       body:
